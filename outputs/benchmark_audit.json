@@ -1,0 +1,18 @@
+{
+  "n_rows": 150,
+  "n_books": 30,
+  "grade_distribution": {
+    "1": 57,
+    "2": 47,
+    "3": 46
+  },
+  "bge_m3_ndcg5_from_csv": 0.8912,
+  "bge_m3_ndcg5_from_manifest": 0.8912,
+  "issues": [
+    "Tidak ada pasangan dengan label 0; kemampuan menolak buku tidak relevan belum teruji secara representatif.",
+    "Sampel buku kecil; perlu uji lebih besar dan representatif sebelum menyimpulkan generalisasi.",
+    "Identitas/rekam jejak anotator dan kesepakatan antar-anotator tidak tersedia di benchmark.",
+    "Berkas keputusan lama mengandung angka 0.7095, berbeda dari file evaluasi CSV (0.8912)."
+  ],
+  "status": "NEEDS_INDEPENDENT_VALIDATION"
+}
