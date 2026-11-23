@@ -24,10 +24,12 @@ import type { OpenBook } from "../types";
 
 export function SimulationSection({
   open,
-  session
+  session,
+  hideTopCallout = false
 }: {
   open: OpenBook;
   session: UserSession;
+  hideTopCallout?: boolean;
 }) {
   const [mode, setMode] = useState<"dense" | "hybrid">("dense");
   const [result, setResult] = useState<SimulationResult | null>(null);
@@ -69,42 +71,44 @@ export function SimulationSection({
   return (
     <section className="simulation-section" aria-label="Portal Rekomendasi Berbasis Competency Gap">
       {/* 1. PROMINENT TOP SUMMARY CALLOUT (HASIL ASESMEN DI ATAS LAYAR) */}
-      <div className="top-gap-summary-callout">
-        <div className="summary-callout-icon">
-          {session.scenario_type === "zero_gap" ? (
-            <Sparkles size={24} className="icon-emerald" />
-          ) : session.scenario_type === "multi_gap" ? (
-            <AlertTriangle size={24} className="icon-coral" />
-          ) : (
-            <TrendingUp size={24} className="icon-amber" />
-          )}
-        </div>
-        <div className="summary-callout-body">
-          <div className="summary-callout-pill">
-            {session.scenario_type === "zero_gap"
-              ? "STANDAR KOMPETENSI TERPENUHI (GAP 0)"
-              : session.scenario_type === "multi_gap"
-              ? "GAP PRIORITAS TERTINGGI: MACHINE LEARNING (GAP 3)"
-              : "KESENJANGAN UTAMA: DATA ANALYTICS (GAP 1)"}
-          </div>
-          <h3 className="summary-callout-title">
-            {result?.top_gap_summary || activeProfile?.top_gap_summary || session.top_gap_summary || (
-              session.scenario_type === "multi_gap"
-                ? "Gap tertinggi Anda: Machine Learning (3) — Disusul Risk Management (2) dan Data Analytics (1)."
-                : session.scenario_type === "single_gap"
-                ? "Kesenjangan Utama: Data Analytics (1) — Membutuhkan penguatan analitik menuju level Pratama."
-                : "Seluruh standar kompetensi terpenuhi (Gap 0) — Program Aktif: Upskilling Lanjutan (Evaluasi Model & MLOps)."
+      {!hideTopCallout && (
+        <div className="top-gap-summary-callout">
+          <div className="summary-callout-icon">
+            {session.scenario_type === "zero_gap" ? (
+              <Sparkles size={24} className="icon-emerald" />
+            ) : session.scenario_type === "multi_gap" ? (
+              <AlertTriangle size={24} className="icon-coral" />
+            ) : (
+              <TrendingUp size={24} className="icon-amber" />
             )}
-          </h3>
-          <p className="summary-callout-desc">
-            {session.scenario_type === "multi_gap"
-              ? "Rekomendasi buku di bawah ini diprioritaskan secara proporsional untuk menutup kesenjangan terbesar Anda terlebih dahulu (Gap 3 > Gap 2 > Gap 1)."
-              : session.scenario_type === "single_gap"
-              ? "Rekomendasi buku di bawah ini dikurasi secara khusus untuk menaikkan skor kompetensi dari level 3 menuju target jabatan level 4."
-              : "Anda telah menguasai kompetensi dasar jabatan. Rekomendasi di bawah berfokus pada topik lanjutan spesifik untuk memperluas kapabilitas profesional."}
-          </p>
+          </div>
+          <div className="summary-callout-body">
+            <div className="summary-callout-pill">
+              {session.scenario_type === "zero_gap"
+                ? "STANDAR KOMPETENSI TERPENUHI (GAP 0)"
+                : session.scenario_type === "multi_gap"
+                ? "GAP PRIORITAS TERTINGGI: MACHINE LEARNING (GAP 3)"
+                : "KESENJANGAN UTAMA: DATA ANALYTICS (GAP 1)"}
+            </div>
+            <h3 className="summary-callout-title">
+              {result?.top_gap_summary || activeProfile?.top_gap_summary || session.top_gap_summary || (
+                session.scenario_type === "multi_gap"
+                  ? "Gap tertinggi Anda: Machine Learning (3) — Disusul Risk Management (2) dan Data Analytics (1)."
+                  : session.scenario_type === "single_gap"
+                  ? "Kesenjangan Utama: Data Analytics (1) — Membutuhkan penguatan analitik menuju level Pratama."
+                  : "Seluruh standar kompetensi terpenuhi (Gap 0) — Program Aktif: Upskilling Lanjutan (Evaluasi Model & MLOps)."
+              )}
+            </h3>
+            <p className="summary-callout-desc">
+              {session.scenario_type === "multi_gap"
+                ? "Rekomendasi buku di bawah ini diprioritaskan secara proporsional untuk menutup kesenjangan terbesar Anda terlebih dahulu (Gap 3 > Gap 2 > Gap 1)."
+                : session.scenario_type === "single_gap"
+                ? "Rekomendasi buku di bawah ini dikurasi secara khusus untuk menaikkan skor kompetensi dari level 3 menuju target jabatan level 4."
+                : "Anda telah menguasai kompetensi dasar jabatan. Rekomendasi di bawah berfokus pada topik lanjutan spesifik untuk memperluas kapabilitas profesional."}
+            </p>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* 2. HEADER WORKSPACE KARYAWAN AKTIF (SESI LOGIN) */}
       <div className="employee-workspace-header">
