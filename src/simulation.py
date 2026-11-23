@@ -17,7 +17,8 @@ SIMULATION_PROFILES: list[dict[str, Any]] = [
         "target_role": "Pratama Data Scientist",
         "scenario_type": "single_gap",
         "scenario_badge": "1 Competency Gap",
-        "scenario_title": "Satu Competency Gap",
+        "scenario_title": "Satu Competency Gap (Data Analytics)",
+        "top_gap_summary": "Kesenjangan Utama Anda: Data Analytics (Gap 1) — Membutuhkan penguatan analitik menuju level Pratama.",
         "narrative": "Junior Data Scientist ingin naik ke Pratama Data Scientist. Hasil asesmen menunjukkan Data Analytics bernilai 3, sedangkan targetnya 4 (Gap = 1). Sistem merekomendasikan buku untuk memperkuat Data Analytics.",
         "assessments": [
             {
@@ -40,6 +41,7 @@ SIMULATION_PROFILES: list[dict[str, Any]] = [
         "scenario_type": "multi_gap",
         "scenario_badge": "3 Competency Gaps",
         "scenario_title": "Tiga Competency Gap (Multi-Gap Berbobot)",
+        "top_gap_summary": "Gap tertinggi Anda: Machine Learning (Gap 3) — Disusul Risk Management (Gap 2) dan Data Analytics (Gap 1). Rekomendasi di bawah memprioritaskan penutupan gap terbesar.",
         "narrative": "Junior Data Analyst ingin beralih menjadi Pratama Data Scientist. Asesmen menunjukkan 3 gap: Machine Learning (Gap 3), Risk Management (Gap 2), dan Data Analytics (Gap 1). Sistem merekomendasikan buku terintegrasi dengan bobot prioritas Gap 3 > Gap 2 > Gap 1.",
         "assessments": [
             {
@@ -82,7 +84,8 @@ SIMULATION_PROFILES: list[dict[str, Any]] = [
         "scenario_type": "zero_gap",
         "scenario_badge": "0 Gap · Upskilling & Pengayaan",
         "scenario_title": "Tidak Ada Gap (Pengayaan / Upskilling)",
-        "narrative": "Pratama Data Scientist telah memenuhi semua standar kompetensi jabatannya (Gap = 0). Sistem tidak memilih buku secara acak, melainkan memberikan rekomendasi terarah untuk materi lanjutan Data Analytics & Machine Learning.",
+        "top_gap_summary": "Seluruh standar kompetensi terpenuhi (Gap 0) — Program Aktif: Upskilling Lanjutan (Evaluasi Model Machine Learning & MLOps).",
+        "narrative": "Pratama Data Scientist telah memenuhi semua standar kompetensi jabatannya (Gap = 0). Sistem tidak memilih buku secara acak, melainkan memberikan rekomendasi terarah untuk pengayaan topik lanjutan: Evaluasi Model Machine Learning dan MLOps & Arsitektur AI Lanjutan.",
         "assessments": [
             {
                 "competency_id": "C066",
@@ -116,8 +119,18 @@ SIMULATION_PROFILES: list[dict[str, Any]] = [
             }
         ],
         "upskilling_tracks": [
-            {"competency_id": "C066", "competency_name": "Data Analytics", "topic": "Materi Lanjutan Analytics & AI"},
-            {"competency_id": "C057", "competency_name": "Machine Learning", "topic": "Arsitektur Algoritma Lanjutan"}
+            {
+                "competency_id": "ML_EVAL",
+                "competency_name": "Evaluasi Model Machine Learning",
+                "topic": "Evaluasi Model & Diagnostic Metrics",
+                "description": "Pengujian keandalan model, validasi silang (cross-validation), metrik diagnostik ROC-AUC, penanganan overfitting, dan validasi empiris performa model ML."
+            },
+            {
+                "competency_id": "MLOPS",
+                "competency_name": "MLOps & Arsitektur AI Lanjutan",
+                "topic": "MLOps & Arsitektur Sistem AI Lanjutan",
+                "description": "Deployment model ke produksi, continuous training pipelines, model monitoring, skalabilitas arsitektur sistem AI, dan automated CI/CD for ML."
+            }
         ]
     }
 ]
@@ -176,13 +189,25 @@ def run_simulation_recommendation(
                     f"(selisih gap {gap_item.gap:g}, bobot prioritas {gap_item.priority:.2f})."
                 )
             b["target_competency_name"] = comp_display
+            b["retrieval_mode"] = retrieval_mode
+            if retrieval_mode == "hybrid":
+                rrf_val = float(b.get('rrf_score') or 0.032)
+                raw_sc = float(b.get('raw_score') or b.get('score') or 0.0)
+                b["score_label"] = "Skor Hybrid RRF"
+                b["score_detail"] = f"RRF Score: {rrf_val:.5f} | Cosine Semantik: {raw_sc:.3f}"
+            else:
+                raw_sc = float(b.get('raw_score') or b.get('score') or 0.0)
+                b["score_label"] = "Skor BGE-M3 (Semantik)"
+                b["score_detail"] = f"Cosine Similarity: {raw_sc:.3f} (Kemiripan semantik representasi profil)"
 
         return {
             "status": "success",
             "profile": profile,
             "scenario_type": scenario_type,
             "is_upskilling": False,
+            "retrieval_mode": retrieval_mode,
             "gap_count": len(gaps),
+            "top_gap_summary": profile.get("top_gap_summary", ""),
             "gaps": [
                 {
                     "competency_id": g.competency_id,
@@ -200,18 +225,16 @@ def run_simulation_recommendation(
 
     # Skenario 3: Zero Gap (Upskilling & Materi Lanjutan)
     else:
-        upskilling_tracks = profile.get("upskilling_tracks", [
-            {"competency_id": "C066", "competency_name": "Data Analytics", "topic": "Materi Lanjutan Analytics"},
-            {"competency_id": "C057", "competency_name": "Machine Learning", "topic": "Arsitektur Algoritma"}
-        ])
-
+        upskilling_tracks = profile.get("upskilling_tracks", [])
         all_books = []
         seen_bids = set()
-        per_track = max(3, top_k // len(upskilling_tracks))
+        per_track = max(3, top_k // len(upskilling_tracks)) if upskilling_tracks else top_k
 
         for track in upskilling_tracks:
             cid = track["competency_id"]
             comp_name = track["competency_name"]
+            topic_name = track.get("topic", comp_name)
+            desc = track.get("description", "")
             fetched = fetch_books(cid, per_track + 2)
             for b in fetched:
                 bid = str(b["book_id"])
@@ -219,16 +242,32 @@ def run_simulation_recommendation(
                     seen_bids.add(bid)
                     rec = dict(b)
                     rec["target_competency_id"] = cid
-                    rec["target_competency_name"] = comp_name
+                    rec["target_competency_name"] = f"{comp_name}"
+                    rec["topic_label"] = topic_name
                     rec["reason"] = (
-                        f"Program Pengayaan (Upskilling): Seluruh standar kompetensi jabatan sudah terpenuhi (Gap = 0). "
-                        f"Buku ini direkomendasikan untuk pendalaman materi lanjutan pada {comp_name}."
+                        f"Program Pengayaan Lanjutan (Upskilling): Seluruh standar kompetensi jabatan telah terpenuhi (Gap = 0). "
+                        f"Buku ini direkomendasikan secara khusus untuk pendalaman topik lanjutan '{topic_name}': {desc}"
                     )
-                    rec["personalized_score"] = round(float(b.get("score", 0.6)), 4)
+                    raw_sc = round(float(b.get("score", 0.6)), 4)
+                    rec["raw_score"] = raw_sc
+                    rec["cosine_similarity"] = raw_sc
+                    rec["rrf_score"] = round(float(b.get("rrf_score", 0.0)), 5) if 'rrf_score' in b else None
+                    rec["personalized_score"] = raw_sc
+                    rec["retrieval_mode"] = retrieval_mode
+                    if retrieval_mode == "hybrid":
+                        rec["score_label"] = "Skor Hybrid RRF"
+                        rec["score_detail"] = f"RRF: {rec.get('rrf_score', 0.032):.5f} | Cosine: {raw_sc:.3f}"
+                    else:
+                        rec["score_label"] = "Skor BGE-M3 (Semantik)"
+                        rec["score_detail"] = f"Cosine Similarity: {raw_sc:.3f} (Kemiripan semantik materi)"
                     all_books.append(rec)
 
-        # Urutkan berdasarkan skor semantik BGE-M3
-        all_books.sort(key=lambda x: -x["personalized_score"])
+        # Urutkan berdasarkan skor
+        if retrieval_mode == "hybrid":
+            all_books.sort(key=lambda x: -float(x.get("rrf_score") or x.get("raw_score") or 0))
+        else:
+            all_books.sort(key=lambda x: -float(x.get("raw_score") or 0))
+
         selected_books = [{**b, "rank": idx} for idx, b in enumerate(all_books[:top_k], 1)]
 
         return {
@@ -236,7 +275,9 @@ def run_simulation_recommendation(
             "profile": profile,
             "scenario_type": "zero_gap",
             "is_upskilling": True,
+            "retrieval_mode": retrieval_mode,
             "gap_count": 0,
+            "top_gap_summary": profile.get("top_gap_summary", ""),
             "gaps": [
                 {
                     "competency_id": a["competency_id"],
@@ -249,5 +290,5 @@ def run_simulation_recommendation(
                 for a in profile["assessments"]
             ],
             "books": selected_books,
-            "summary_note": "Semua standar kompetensi telah terpenuhi (Gap = 0). Menampilkan rekomendasi upskilling materi lanjutan Data Analytics & Machine Learning."
+            "summary_note": "Semua standar kompetensi telah terpenuhi (Gap = 0). Menampilkan rekomendasi upskilling materi lanjutan Evaluasi Model Machine Learning & MLOps."
         }

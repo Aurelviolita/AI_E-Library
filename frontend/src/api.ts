@@ -132,8 +132,9 @@ export type SimulationProfile = {
   scenario_badge: string;
   scenario_title: string;
   narrative: string;
+  top_gap_summary?: string;
   assessments: SimulationAssessment[];
-  upskilling_tracks?: { competency_id: string; competency_name: string; topic: string }[];
+  upskilling_tracks?: { competency_id: string; competency_name: string; topic: string; description?: string }[];
 };
 
 export type SimulationBook = {
@@ -145,11 +146,17 @@ export type SimulationBook = {
   kategori?: string;
   target_competency_id: string;
   target_competency_name: string;
+  topic_label?: string;
   reason: string;
   personalized_score: number;
   score?: number;
+  raw_score?: number;
+  rrf_score?: number | null;
+  score_label?: string;
+  score_detail?: string;
   rank: number;
   model?: string;
+  retrieval_mode?: "dense" | "hybrid";
   source_url?: string | null;
   google_id?: string | null;
   embed_url?: string | null;
@@ -162,6 +169,7 @@ export type SimulationResult = {
   scenario_type: "single_gap" | "multi_gap" | "zero_gap";
   is_upskilling: boolean;
   gap_count: number;
+  top_gap_summary?: string;
   gaps: {
     competency_id: string;
     competency_name: string;
@@ -211,6 +219,7 @@ export type UserSession = {
   target_role: string;
   scenario_type: "single_gap" | "multi_gap" | "zero_gap";
   scenario_badge: string;
+  top_gap_summary?: string;
   session_token: string;
 };
 

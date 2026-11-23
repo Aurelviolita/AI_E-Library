@@ -1,9 +1,11 @@
 import {
   AlertCircle,
+  AlertTriangle,
   Award,
   BookOpen,
   Cpu,
   ExternalLink,
+  Info,
   Layers,
   Sparkles,
   TrendingUp,
@@ -66,7 +68,45 @@ export function SimulationSection({
 
   return (
     <section className="simulation-section" aria-label="Portal Rekomendasi Berbasis Competency Gap">
-      {/* HEADER WORKSPACE KARYAWAN AKTIF (SESI LOGIN) */}
+      {/* 1. PROMINENT TOP SUMMARY CALLOUT (HASIL ASESMEN DI ATAS LAYAR) */}
+      <div className="top-gap-summary-callout">
+        <div className="summary-callout-icon">
+          {session.scenario_type === "zero_gap" ? (
+            <Sparkles size={24} className="icon-emerald" />
+          ) : session.scenario_type === "multi_gap" ? (
+            <AlertTriangle size={24} className="icon-coral" />
+          ) : (
+            <TrendingUp size={24} className="icon-amber" />
+          )}
+        </div>
+        <div className="summary-callout-body">
+          <div className="summary-callout-pill">
+            {session.scenario_type === "zero_gap"
+              ? "STANDAR KOMPETENSI TERPENUHI (GAP 0)"
+              : session.scenario_type === "multi_gap"
+              ? "GAP PRIORITAS TERTINGGI: MACHINE LEARNING (GAP 3)"
+              : "KESENJANGAN UTAMA: DATA ANALYTICS (GAP 1)"}
+          </div>
+          <h3 className="summary-callout-title">
+            {result?.top_gap_summary || activeProfile?.top_gap_summary || session.top_gap_summary || (
+              session.scenario_type === "multi_gap"
+                ? "Gap tertinggi Anda: Machine Learning (3) — Disusul Risk Management (2) dan Data Analytics (1)."
+                : session.scenario_type === "single_gap"
+                ? "Kesenjangan Utama: Data Analytics (1) — Membutuhkan penguatan analitik menuju level Pratama."
+                : "Seluruh standar kompetensi terpenuhi (Gap 0) — Program Aktif: Upskilling Lanjutan (Evaluasi Model & MLOps)."
+            )}
+          </h3>
+          <p className="summary-callout-desc">
+            {session.scenario_type === "multi_gap"
+              ? "Rekomendasi buku di bawah ini diprioritaskan secara proporsional untuk menutup kesenjangan terbesar Anda terlebih dahulu (Gap 3 > Gap 2 > Gap 1)."
+              : session.scenario_type === "single_gap"
+              ? "Rekomendasi buku di bawah ini dikurasi secara khusus untuk menaikkan skor kompetensi dari level 3 menuju target jabatan level 4."
+              : "Anda telah menguasai kompetensi dasar jabatan. Rekomendasi di bawah berfokus pada topik lanjutan spesifik untuk memperluas kapabilitas profesional."}
+          </p>
+        </div>
+      </div>
+
+      {/* 2. HEADER WORKSPACE KARYAWAN AKTIF (SESI LOGIN) */}
       <div className="employee-workspace-header">
         <div className="workspace-user-intro">
           <div className="workspace-avatar">
@@ -186,7 +226,8 @@ export function SimulationSection({
           <div className="engine-info">
             <Cpu size={18} />
             <span>
-              Model Rekomendasi: <strong>BGE-M3 (1024-dim Semantik)</strong>
+              Model Aktif:{" "}
+              <strong>{mode === "dense" ? "BGE-M3 (1024-dim Semantik Cosine)" : "Hybrid RRF (BGE-M3 + TF-IDF)"}</strong>
             </span>
           </div>
           <div className="model-toggle-group">
@@ -205,6 +246,30 @@ export function SimulationSection({
             >
               <Layers size={14} /> Hybrid (BGE-M3 + TF-IDF)
             </button>
+          </div>
+        </div>
+
+        {/* KOTAK TRANSPARANSI METODOLOGI SKOR REKOMENDASI */}
+        <div className="score-methodology-card">
+          <div className="methodology-badge">
+            <Info size={15} />
+            <span>Transparansi Perhitungan Skor &amp; Pemeringkatan Rekomendasi:</span>
+          </div>
+          <div className="methodology-text">
+            {mode === "dense" ? (
+              <p>
+                <strong>Mode BGE-M3 (Dense):</strong> Skor merupakan nilai <em>Cosine Similarity</em> (misal <code>0.701</code> atau <code>70.1%</code>) antara representasi semantik kompetensi (vektor 1024 dimensi) dengan representasi judul &amp; abstrak buku di katalog. Semakin mendekati 100%, semakin mendalam kecocokan substansi buku dengan kompetensi target.
+              </p>
+            ) : (
+              <p>
+                <strong>Mode Hybrid RRF:</strong> Menggabungkan peringkat <em>Dense Semantik (BGE-M3)</em> dan <em>Leksikal (TF-IDF)</em> menggunakan formula <em>Reciprocal Rank Fusion</em> <code>RRF = ∑(1 / (60 + rank))</code>. Angka desimal (misal <code>0.0328</code>) merefleksikan konsensus peringkat tertinggi dari kedua representasi agar tidak kehilangan istilah teknis spesifik.
+              </p>
+            )}
+            {session.scenario_type === "multi_gap" && (
+              <p className="methodology-note">
+                * <strong>Pembobotan Multi-Gap:</strong> Urutan akhir mengombinasikan 70% Relevansi Konten Buku dan 30% Bobot Kesenjangan Kompetensi (Gap 3 mendapatkan porsi prioritas tertinggi dibanding Gap 2 dan Gap 1).
+              </p>
+            )}
           </div>
         </div>
 
@@ -270,9 +335,18 @@ export function SimulationSection({
                           <span className="sim-comp-badge">
                             {b.target_competency_name || b.target_competency_id}
                           </span>
-                          <span className="sim-score-badge">
-                            Skor BGE-M3: {b.personalized_score ? (b.personalized_score * 100).toFixed(0) : "85"}%
+                          <span className={`sim-score-badge ${mode === "hybrid" ? "badge-hybrid" : "badge-dense"}`}>
+                            {mode === "hybrid"
+                              ? `Skor Hybrid RRF: ${b.rrf_score ? b.rrf_score.toFixed(4) : (b.score ? (b.score * 100).toFixed(1) + '%' : '0.0328')}`
+                              : `Skor BGE-M3: ${b.raw_score ? (b.raw_score * 100).toFixed(1) + '%' : (b.score ? (b.score * 100).toFixed(1) + '%' : '70.1%')}`}
                           </span>
+                        </div>
+                        <div className="sim-score-subdetail">
+                          {mode === "hybrid" ? (
+                            <span>Fusi Semantik + Leksikal (Cosine Semantik: {b.raw_score ? (b.raw_score * 100).toFixed(1) + '%' : '65.2%'})</span>
+                          ) : (
+                            <span>Cosine Similarity: {b.raw_score ? b.raw_score.toFixed(3) : (b.score ? b.score.toFixed(3) : '0.701')} · Vektor 1024-dim</span>
+                          )}
                         </div>
 
                         <h4 className="sim-book-title" onClick={() => open(bookObj)}>

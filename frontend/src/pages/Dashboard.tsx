@@ -2,7 +2,6 @@ import { ArrowRight, ArrowUpRight, BookOpen, CircleHelp, Compass, FileSearch, Li
 import { useEffect, useState } from "react";
 import type { Book, OpenBook, Page } from "../types";
 import { fromCatalog, searchCatalog, type Health, type UserSession } from "../api";
-import { Cover } from "../components/Cover";
 import { BookCard } from "../components/BookCard";
 import { Empty, Skeleton } from "../components/LibraryStates";
 import { SimulationSection } from "../components/SimulationSection";
@@ -32,41 +31,38 @@ export function Dashboard({
   return (
     <>
       <div className="dashboard-intro">
-        <span className="eyebrow">RUANG BACA, RUANG BERTUMBUH</span>
+        <span className="eyebrow">PORTAL PENGEMBANGAN KARYAWAN &amp; E-LIBRARY</span>
       </div>
-      <section className="hero">
-        <div className="hero-copy">
-          <div className="hero-kicker">
-            <span />
-            PERPUSTAKAAN BERBASIS KOMPETENSI
+
+      {/* HASIL ASESMEN STANDAR KOMPETENSI & REKOMENDASI AI DI BAGIAN ATAS */}
+      <SimulationSection open={open} session={session} />
+
+      {/* SUDUT BACA PILIHAN DARI KATALOG */}
+      <section className="curated">
+        <div className="section-heading">
+          <div>
+            <div className="eyebrow">DARI RAK PERPUSTAKAAN</div>
+            <h2>Sudut baca pilihan</h2>
+            <p>Tambahan terbaru dari katalog perpustakaan.</p>
           </div>
-          <h1>
-            Temukan buku
-            <br />
-            untuk kompetensi
-            <br />
-            <em>Anda.</em>
-          </h1>
-          <p>
-            Jelajahi bacaan yang relevan untuk menjembatani kebutuhan pengembangan kompetensi Anda.
-          </p>
-          <button className="btn btn-gold" onClick={() => go("recommendations")}>
-            Cari rekomendasi <ArrowUpRight size={18} />
+          <button className="text-link" onClick={() => go("catalog")}>
+            Lihat katalog <ArrowRight size={17} />
           </button>
-          <span className="hero-footnote">Bacaan yang tepat. Perspektif yang lebih luas.</span>
         </div>
-        <div className="hero-library" aria-hidden="true">
-          <span className="shelf-caption">SEBUAH KOLEKSI UNTUK BERTUMBUH</span>
-          <div className="shelf-backdrop" />
-          <div className="hero-volumes">
-            {books?.slice(0, 3).map((book, index) => (
-              <Cover key={book.id} book={book} variant={index + 1} className={["volume-one", "volume-two", "volume-three"][index]} />
-            ))}
+        {error ? (
+          <Empty title="Koleksi belum dapat dimuat" action={<button className="text-link" onClick={() => { setError(false); setAttempt((n) => n + 1); }}>Coba lagi</button>}>
+            Muat ulang koleksi dari katalog.
+          </Empty>
+        ) : books === null ? <Skeleton count={4} /> : books.length === 0 ? (
+          <Empty title="Katalog masih kosong">Buku terbaru akan muncul di sini.</Empty>
+        ) : (
+          <div className="book-grid dashboard-grid">
+            {books.map((book) => <BookCard key={book.id} book={book} open={open} />)}
           </div>
-          <div className="shelf-ledge" />
-          <span className="shelf-number">PILIHAN PUSTAKA — 01 / 03</span>
-        </div>
+        )}
       </section>
+
+      {/* RINGKASAN KOLEKSI PERPUSTAKAAN & NAVIGASI CEPAT */}
       <section className="overview" aria-label="Jelajahi perpustakaan">
         <div className="overview-stat">
           <Library size={23} strokeWidth={1.4} />
@@ -103,34 +99,11 @@ export function Dashboard({
           <ArrowUpRight size={18} />
         </button>
       </section>
-      <SimulationSection open={open} session={session} />
-      <section className="curated">
-        <div className="section-heading">
-          <div>
-            <div className="eyebrow">DARI RAK PERPUSTAKAAN</div>
-            <h2>Sudut baca pilihan</h2>
-            <p>Tambahan terbaru dari katalog perpustakaan.</p>
-          </div>
-          <button className="text-link" onClick={() => go("catalog")}>
-            Lihat katalog <ArrowRight size={17} />
-          </button>
-        </div>
-        {error ? (
-          <Empty title="Koleksi belum dapat dimuat" action={<button className="text-link" onClick={() => { setError(false); setAttempt((n) => n + 1); }}>Coba lagi</button>}>
-            Muat ulang koleksi dari katalog.
-          </Empty>
-        ) : books === null ? <Skeleton count={4} /> : books.length === 0 ? (
-          <Empty title="Katalog masih kosong">Buku terbaru akan muncul di sini.</Empty>
-        ) : (
-          <div className="book-grid dashboard-grid">
-            {books.map((book) => <BookCard key={book.id} book={book} open={open} />)}
-          </div>
-        )}
-      </section>
+
       <div className="library-note">
         <CircleHelp size={15} />
         <p>
-          Sampul buku pada halaman ini merupakan ilustrasi.
+          Sampul buku pada halaman ini merupakan ilustrasi katalog.
         </p>
       </div>
     </>

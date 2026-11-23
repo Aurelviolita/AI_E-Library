@@ -65,10 +65,19 @@ def merge_learning_recommendations(gaps: list[Gap], fetch_books, *, top_k: int =
             why = (f"Mendukung kompetensi {gap.competency_name} ({gap.competency_id}); "
                    f"tingkat saat ini {gap.current_level:g}, target {gap.required_level:g}, "
                    f"selisih {gap.gap:g}. Kecocokan judul/abstrak perlu ditinjau pengguna.")
-            rec = {**book, 'personalized_score': combined,
-                   'reason': why, 'target_competency_id': gap.competency_id,
-                   'gap_priority': gap.priority,
-                   'score_interpretation': 'Skor relatif untuk pengurutan, bukan peluang keberhasilan belajar'}
+            rec = {
+                **book,
+                'raw_score': round(float(book.get('score', 0.0)), 4),
+                'cosine_similarity': round(float(book.get('score', 0.0)), 4),
+                'rrf_score': round(float(book.get('rrf_score', 0.0)), 5) if 'rrf_score' in book else None,
+                'personalized_score': combined,
+                'relevance_weight': round(relevance, 4),
+                'gap_priority_weight': round(priority_score, 4),
+                'reason': why,
+                'target_competency_id': gap.competency_id,
+                'gap_priority': gap.priority,
+                'score_interpretation': 'Skor gabungan terbobot: 70% relevansi konten semantik + 30% urgensi kesenjangan kompetensi'
+            }
             if bid not in best or combined > best[bid]['personalized_score']:
                 best[bid] = rec
     ordered = sorted(best.values(), key=lambda b: (-b['personalized_score'], str(b['book_id'])))

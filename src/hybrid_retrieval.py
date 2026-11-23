@@ -51,8 +51,12 @@ class HybridCatalogRetriever:
             out.append({
                 'rank': rank, 'book_id': str(book['book_id']), 'judul': str(book['judul']),
                 'author': str(book.get('author','')), 'tahun': str(book.get('tahun','')),
-                'kategori': str(book.get('kategori_buku','')), 'score': round(float(scores[i]),6),
-                'skor_model': round(float(dense[i]), 4), 'lexical_score': round(float(lexical[i]), 4),
+                'kategori': str(book.get('kategori_buku','')),
+                'score': round(float(scores[i]), 6),
+                'skor_model': round(float(dense[i]), 4),
+                'rrf_score': round(float(scores[i]), 5),
+                'raw_score': round(float(dense[i]), 4),
+                'lexical_score': round(float(lexical[i]), 4),
                 'model': 'hybrid_rrf_bge_m3_tfidf', 'is_fallback': False,
                 'query_latency_ms': None,
             })

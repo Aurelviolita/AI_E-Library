@@ -23,6 +23,8 @@ import json
 from functools import lru_cache
 
 import pandas as pd
+import numpy as np
+from sklearn.metrics.pairwise import cosine_similarity
 from fastapi import FastAPI, HTTPException, Query, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse
@@ -575,14 +577,75 @@ def get_simulation_recommendation(
 ):
     """Menjalankan rekomendasi berbasis competency gap untuk profil user terpilih (User 1, 2, atau 3)."""
     names = dict(zip(recommender.profiles['competency_id'], recommender.profiles['competency_name']))
+    names['C057'] = "Machine Learning (IT Software Dev)"
+    names['ML_EVAL'] = "Evaluasi Model Machine Learning"
+    names['MLOPS'] = "MLOps & Arsitektur AI Lanjutan"
+
+    # Muat vektor simulasi pra-komputasi untuk ML, Evaluasi Model, dan MLOps
+    sim_dense_path = ROOT / "models" / "simulation_vectors.npz"
+    sim_tfidf_path = ROOT / "models" / "simulation_tfidf_vectors.npz"
+    sim_dense = np.load(sim_dense_path) if sim_dense_path.exists() else None
+    sim_tfidf = np.load(sim_tfidf_path) if sim_tfidf_path.exists() else None
+    cat_vecs = np.load(recommender.artifact_dir / "catalog_vectors.npy")
+
+    key_map = {"C057": "ML_FOUNDATION", "ML_EVAL": "ML_EVAL", "MLOPS": "MLOPS"}
+
     if retrieval_mode == 'hybrid':
         if recommender.model_name != 'bge_m3':
             raise HTTPException(status_code=400, detail='Hybrid RRF membutuhkan model utama BGE-M3')
         hybrid = get_hybrid_retriever()
+
         def fetch(cid, top_k=10):
+            if sim_dense and sim_tfidf and cid in key_map:
+                k = key_map[cid]
+                dense = np.dot(cat_vecs, sim_dense[k])
+                lexical = cosine_similarity(hybrid.catalog_vectors, sim_tfidf[k].reshape(1, -1)).ravel()
+                dense_order = np.argsort(-dense)
+                lex_order = np.argsort(-lexical)
+                rrf = np.zeros(len(recommender.catalog))
+                for o in (dense_order, lex_order):
+                    for rank, idx in enumerate(o, 1):
+                        rrf[idx] += 1 / (60 + rank)
+                top_indices = np.argsort(-rrf)[:top_k]
+                res = []
+                for rank, idx in enumerate(top_indices, 1):
+                    row = recommender.catalog.iloc[idx]
+                    res.append({
+                        'rank': rank,
+                        'book_id': str(row['book_id']),
+                        'judul': str(row['judul']),
+                        'author': str(row.get('author', '')),
+                        'tahun': str(row.get('tahun', '')),
+                        'kategori': str(row.get('kategori_buku', '')),
+                        'score': round(float(dense[idx]), 4),
+                        'skor_model': round(float(dense[idx]), 4),
+                        'rrf_score': round(float(rrf[idx]), 5),
+                        'lexical_score': round(float(lexical[idx]), 4),
+                        'model': 'hybrid_rrf_bge_m3_tfidf'
+                    })
+                return res
             return hybrid.search(cid, top_k=top_k)
     else:
         def fetch(cid, top_k=10):
+            if sim_dense and cid in key_map:
+                k = key_map[cid]
+                dense = np.dot(cat_vecs, sim_dense[k])
+                top_indices = np.argsort(-dense)[:top_k]
+                res = []
+                for rank, idx in enumerate(top_indices, 1):
+                    row = recommender.catalog.iloc[idx]
+                    res.append({
+                        'rank': rank,
+                        'book_id': str(row['book_id']),
+                        'judul': str(row['judul']),
+                        'author': str(row.get('author', '')),
+                        'tahun': str(row.get('tahun', '')),
+                        'kategori': str(row.get('kategori_buku', '')),
+                        'score': round(float(dense[idx]), 4),
+                        'skor_model': round(float(dense[idx]), 4),
+                        'model': 'bge_m3_precomputed'
+                    })
+                return res
             return recommender.recommend_books_for_competency(cid, top_k=top_k)
 
     try:
@@ -622,7 +685,8 @@ AUTH_USERS = {
         "current_role": "Junior Data Scientist",
         "target_role": "Pratama Data Scientist",
         "scenario_type": "single_gap",
-        "scenario_badge": "1 Competency Gap"
+        "scenario_badge": "1 Competency Gap",
+        "top_gap_summary": "Kesenjangan Utama: Data Analytics (Gap 1) — Membutuhkan penguatan analitik menuju level Pratama."
     },
     "user2": {
         "id": "user_2",
@@ -632,7 +696,8 @@ AUTH_USERS = {
         "current_role": "Junior Data Analyst",
         "target_role": "Pratama Data Scientist",
         "scenario_type": "multi_gap",
-        "scenario_badge": "3 Competency Gaps"
+        "scenario_badge": "3 Competency Gaps",
+        "top_gap_summary": "Gap tertinggi Anda: Machine Learning (Gap 3) — Disusul Risk Management (Gap 2) dan Data Analytics (Gap 1)."
     },
     "user3": {
         "id": "user_3",
@@ -642,7 +707,8 @@ AUTH_USERS = {
         "current_role": "Pratama Data Scientist",
         "target_role": "Pratama Data Scientist (Pengembangan Lanjutan)",
         "scenario_type": "zero_gap",
-        "scenario_badge": "0 Gap · Upskilling & Pengayaan"
+        "scenario_badge": "0 Gap · Upskilling & Pengayaan",
+        "top_gap_summary": "Seluruh standar kompetensi terpenuhi (Gap 0) — Program Aktif: Upskilling Lanjutan (Evaluasi Model Machine Learning & MLOps)."
     }
 }
 
