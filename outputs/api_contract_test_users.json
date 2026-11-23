@@ -1,0 +1,201 @@
+{
+    "endpoint": "/api/v1/recommend-competencies",
+    "method": "POST",
+    "request_body": {
+        "title": "Healthcare Risk Mitigation Handbook",
+        "abstract": "This handbook discusses risk identification, assessment, monitoring and mitigation in health services.",
+        "top_k": 5
+    },
+    "response_body": {
+        "status": "success",
+        "model_used": "bge_m3",
+        "recommendations": [
+            {
+                "rank": 1,
+                "competency_id": "C023",
+                "competency_name": "Risk Management",
+                "score": 0.6502,
+                "confidence": "SANGAT_TINGGI",
+                "model": "bge_m3",
+                "model_type": "dense_biencoder",
+                "is_fallback": false,
+                "latency_breakdown_ms": {
+                    "text_cleaning_ms": 0.14,
+                    "embedding_encoding_ms": 1531.69,
+                    "similarity_ranking_ms": 1.29,
+                    "total_ms": 28667.52
+                }
+            },
+            {
+                "rank": 2,
+                "competency_id": "C009",
+                "competency_name": "Fraud Management",
+                "score": 0.5937,
+                "confidence": "TINGGI",
+                "model": "bge_m3",
+                "model_type": "dense_biencoder",
+                "is_fallback": false,
+                "latency_breakdown_ms": {
+                    "text_cleaning_ms": 0.14,
+                    "embedding_encoding_ms": 1531.69,
+                    "similarity_ranking_ms": 1.29,
+                    "total_ms": 28667.52
+                }
+            },
+            {
+                "rank": 3,
+                "competency_id": "C008",
+                "competency_name": "Utilization Management",
+                "score": 0.5831,
+                "confidence": "TINGGI",
+                "model": "bge_m3",
+                "model_type": "dense_biencoder",
+                "is_fallback": false,
+                "latency_breakdown_ms": {
+                    "text_cleaning_ms": 0.14,
+                    "embedding_encoding_ms": 1531.69,
+                    "similarity_ranking_ms": 1.29,
+                    "total_ms": 28667.52
+                }
+            },
+            {
+                "rank": 4,
+                "competency_id": "C020",
+                "competency_name": "Health Actuary",
+                "score": 0.5622,
+                "confidence": "TINGGI",
+                "model": "bge_m3",
+                "model_type": "dense_biencoder",
+                "is_fallback": false,
+                "latency_breakdown_ms": {
+                    "text_cleaning_ms": 0.14,
+                    "embedding_encoding_ms": 1531.69,
+                    "similarity_ranking_ms": 1.29,
+                    "total_ms": 28667.52
+                }
+            },
+            {
+                "rank": 5,
+                "competency_id": "C021",
+                "competency_name": "Health Economic",
+                "score": 0.5619,
+                "confidence": "TINGGI",
+                "model": "bge_m3",
+                "model_type": "dense_biencoder",
+                "is_fallback": false,
+                "latency_breakdown_ms": {
+                    "text_cleaning_ms": 0.14,
+                    "embedding_encoding_ms": 1531.69,
+                    "similarity_ranking_ms": 1.29,
+                    "total_ms": 28667.52
+                }
+            }
+        ]
+    },
+    "test_scenarios": [
+        {
+            "user_id": "user_1",
+            "deskripsi": "User 1 memiliki 1 competency gap",
+            "request": {
+                "endpoint": "/api/v1/recommend-competencies",
+                "method": "POST",
+                "request_body": {
+                    "user_id": "user_1",
+                    "title": "Healthcare Risk Mitigation Handbook",
+                    "competency_gaps": [
+                        {
+                            "competency_id": "COMP-001",
+                            "gap_level": 1
+                        }
+                    ]
+                }
+            },
+            "expected_response": {
+                "status": "success",
+                "total_gaps": 1,
+                "recommendations": [
+                    {
+                        "competency_id": "COMP-001",
+                        "gap": 1,
+                        "recommended_books": [
+                            "Book A"
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "user_id": "user_2",
+            "deskripsi": "User 2 memiliki 3 competency gap dengan level gap 3, 2, dan 1",
+            "request": {
+                "endpoint": "/api/v1/recommend-competencies",
+                "method": "POST",
+                "request_body": {
+                    "user_id": "user_2",
+                    "title": "Healthcare Risk Mitigation Handbook",
+                    "competency_gaps": [
+                        {
+                            "competency_id": "COMP-001",
+                            "gap_level": 3
+                        },
+                        {
+                            "competency_id": "COMP-002",
+                            "gap_level": 2
+                        },
+                        {
+                            "competency_id": "COMP-003",
+                            "gap_level": 1
+                        }
+                    ]
+                }
+            },
+            "expected_response": {
+                "status": "success",
+                "total_gaps": 3,
+                "recommendations": [
+                    {
+                        "competency_id": "COMP-001",
+                        "gap": 3,
+                        "recommended_books": [
+                            "Book A",
+                            "Book B"
+                        ]
+                    },
+                    {
+                        "competency_id": "COMP-002",
+                        "gap": 2,
+                        "recommended_books": [
+                            "Book C"
+                        ]
+                    },
+                    {
+                        "competency_id": "COMP-003",
+                        "gap": 1,
+                        "recommended_books": [
+                            "Book D"
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "user_id": "user_3",
+            "deskripsi": "User 3 tidak memiliki competency gap",
+            "request": {
+                "endpoint": "/api/v1/recommend-competencies",
+                "method": "POST",
+                "request_body": {
+                    "user_id": "user_3",
+                    "title": "Healthcare Risk Mitigation Handbook",
+                    "competency_gaps": []
+                }
+            },
+            "expected_response": {
+                "status": "success",
+                "total_gaps": 0,
+                "message": "Tidak ada competency gap. Tidak ada rekomendasi tambahan diperlukan.",
+                "recommendations": []
+            }
+        }
+    ]
+}
