@@ -35,6 +35,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from src.recommender import BookRecommender
+from src.simulation import SIMULATION_PROFILES, run_simulation_recommendation
 
 # Inisialisasi Model Produksi
 MODEL_DIR = ROOT / "models" / "best_model"
@@ -554,6 +555,118 @@ def personalized_learning(req: PersonalizedRequest):
             'assessment_note': ('Simulasi ilustratif, bukan hasil asesmen organisasi.' if req.assessment_source == 'simulasi' else 'Angka diinput pengguna dari dokumen asesmen; sistem tidak memvalidasi keaslian atau standar jabatan.'),
             'disclaimer': ('Rekomendasi berbasis relevansi semantik dan skor kebutuhan belajar, '
                            'bukan bukti peningkatan kompetensi. Periksa kesesuaian bahan bacaan.')}
+
+
+# =============================================================================
+# SIMULASI COMPETENCY GAP (USER 1, USER 2, USER 3 DEMONSTRATION)
+# =============================================================================
+
+@app.get('/api/v1/simulation/profiles', tags=['Simulasi Competency Gap'])
+def get_simulation_profiles():
+    """Mengambil daftar 3 profil dummy karyawan untuk simulasi demonstrasi."""
+    return {"status": "success", "profiles": SIMULATION_PROFILES}
+
+
+@app.get('/api/v1/simulation/recommend/{user_id}', tags=['Simulasi Competency Gap'])
+def get_simulation_recommendation(
+    user_id: str,
+    retrieval_mode: Literal["dense", "hybrid"] = Query("dense", description="Mode retrieval AI (dense BGE-M3 atau hybrid RRF)"),
+    top_k: int = Query(6, ge=1, le=12)
+):
+    """Menjalankan rekomendasi berbasis competency gap untuk profil user terpilih (User 1, 2, atau 3)."""
+    names = dict(zip(recommender.profiles['competency_id'], recommender.profiles['competency_name']))
+    if retrieval_mode == 'hybrid':
+        if recommender.model_name != 'bge_m3':
+            raise HTTPException(status_code=400, detail='Hybrid RRF membutuhkan model utama BGE-M3')
+        hybrid = get_hybrid_retriever()
+        def fetch(cid, top_k=10):
+            return hybrid.search(cid, top_k=top_k)
+    else:
+        def fetch(cid, top_k=10):
+            return recommender.recommend_books_for_competency(cid, top_k=top_k)
+
+    try:
+        res = run_simulation_recommendation(
+            user_id,
+            fetch,
+            names,
+            top_k=top_k,
+            retrieval_mode=retrieval_mode
+        )
+        for book in res['books']:
+            book_id = str(book['book_id'])
+            book['source_url'] = book_source_index().get(book_id)
+            vol_id = google_books_volume_id(book['source_url'])
+            if vol_id:
+                book['google_id'] = vol_id
+                book['embed_url'] = f"https://books.google.com/books?id={vol_id}&printsec=frontcover&output=embed"
+                book['reader_url'] = f"https://books.google.com/books?id={vol_id}&printsec=frontcover"
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+    res['retrieval_mode'] = retrieval_mode
+    return res
+
+
+# =============================================================================
+# AUTENTIKASI SESI PENGGUNA (USER 1, USER 2, USER 3)
+# =============================================================================
+AUTH_USERS = {
+    "user1": {
+        "id": "user_1",
+        "username": "user1",
+        "password": "password",
+        "name": "User 1",
+        "current_role": "Junior Data Scientist",
+        "target_role": "Pratama Data Scientist",
+        "scenario_type": "single_gap",
+        "scenario_badge": "1 Competency Gap"
+    },
+    "user2": {
+        "id": "user_2",
+        "username": "user2",
+        "password": "password",
+        "name": "User 2",
+        "current_role": "Junior Data Analyst",
+        "target_role": "Pratama Data Scientist",
+        "scenario_type": "multi_gap",
+        "scenario_badge": "3 Competency Gaps"
+    },
+    "user3": {
+        "id": "user_3",
+        "username": "user3",
+        "password": "password",
+        "name": "User 3",
+        "current_role": "Pratama Data Scientist",
+        "target_role": "Pratama Data Scientist (Pengembangan Lanjutan)",
+        "scenario_type": "zero_gap",
+        "scenario_badge": "0 Gap · Upskilling & Pengayaan"
+    }
+}
+
+class LoginRequest(BaseModel):
+    username: str
+    password: Optional[str] = "password"
+
+@app.post('/api/v1/auth/login', tags=['Autentikasi Sesi'])
+def login(req: LoginRequest):
+    u = req.username.strip().lower()
+    user = AUTH_USERS.get(u)
+    if not user:
+        for cand in AUTH_USERS.values():
+            if cand['id'] == u or cand['name'].lower() == u:
+                user = cand
+                break
+    if not user:
+        raise HTTPException(status_code=401, detail="Akun tidak ditemukan. Gunakan user1, user2, atau user3.")
+    return {
+        "status": "success",
+        "session_token": f"session-{user['id']}",
+        "user": user
+    }
+
 
 # Jalankan server setelah SEMUA endpoint didaftarkan (penting saat python api.py).
 if __name__ == "__main__":

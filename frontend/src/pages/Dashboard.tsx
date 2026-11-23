@@ -1,12 +1,23 @@
 import { ArrowRight, ArrowUpRight, BookOpen, CircleHelp, Compass, FileSearch, Library } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { Book, OpenBook, Page } from "../types";
-import { fromCatalog, searchCatalog, type Health } from "../api";
+import { fromCatalog, searchCatalog, type Health, type UserSession } from "../api";
 import { Cover } from "../components/Cover";
 import { BookCard } from "../components/BookCard";
 import { Empty, Skeleton } from "../components/LibraryStates";
+import { SimulationSection } from "../components/SimulationSection";
 
-export function Dashboard({ go, open, health }: { go: (p: Page) => void; open: OpenBook; health: Health | null }) {
+export function Dashboard({
+  go,
+  open,
+  health,
+  session
+}: {
+  go: (p: Page) => void;
+  open: OpenBook;
+  health: Health | null;
+  session: UserSession;
+}) {
   const [books, setBooks] = useState<Book[] | null>(null);
   const [error, setError] = useState(false);
   const [attempt, setAttempt] = useState(0);
@@ -92,6 +103,7 @@ export function Dashboard({ go, open, health }: { go: (p: Page) => void; open: O
           <ArrowUpRight size={18} />
         </button>
       </section>
+      <SimulationSection open={open} session={session} />
       <section className="curated">
         <div className="section-heading">
           <div>

@@ -111,3 +111,113 @@ export type BookAccess = { book_id: string; source_url: string | null; preview_u
 export function getBookAccess(id: string, signal: AbortSignal) {
   return request<BookAccess>(`/api/v1/catalog/${encodeURIComponent(id)}/access`, { signal });
 }
+
+export type SimulationAssessment = {
+  competency_id: string;
+  competency_name: string;
+  current_level: number;
+  required_level: number;
+  importance: number;
+  gap: number;
+  priority_label: string;
+  notes?: string;
+};
+
+export type SimulationProfile = {
+  id: string;
+  name: string;
+  current_role: string;
+  target_role: string;
+  scenario_type: "single_gap" | "multi_gap" | "zero_gap";
+  scenario_badge: string;
+  scenario_title: string;
+  narrative: string;
+  assessments: SimulationAssessment[];
+  upskilling_tracks?: { competency_id: string; competency_name: string; topic: string }[];
+};
+
+export type SimulationBook = {
+  book_id: string | number;
+  judul: string;
+  author: string;
+  tahun?: string | number;
+  kategori_buku?: string;
+  kategori?: string;
+  target_competency_id: string;
+  target_competency_name: string;
+  reason: string;
+  personalized_score: number;
+  score?: number;
+  rank: number;
+  model?: string;
+  source_url?: string | null;
+  google_id?: string | null;
+  embed_url?: string | null;
+  reader_url?: string | null;
+};
+
+export type SimulationResult = {
+  status: string;
+  profile: SimulationProfile;
+  scenario_type: "single_gap" | "multi_gap" | "zero_gap";
+  is_upskilling: boolean;
+  gap_count: number;
+  gaps: {
+    competency_id: string;
+    competency_name: string;
+    current_level: number;
+    required_level: number;
+    gap: number;
+    priority: number;
+  }[];
+  books: SimulationBook[];
+  summary_note: string;
+  retrieval_mode: "dense" | "hybrid";
+};
+
+export function getSimulationProfiles(signal?: AbortSignal) {
+  return request<{ status: string; profiles: SimulationProfile[] }>("/api/v1/simulation/profiles", { signal });
+}
+
+export function getSimulationRecommendation(
+  userId: string,
+  mode: "dense" | "hybrid" = "dense",
+  topK: number = 6,
+  signal?: AbortSignal
+) {
+  return request<SimulationResult>(
+    `/api/v1/simulation/recommend/${encodeURIComponent(userId)}?retrieval_mode=${mode}&top_k=${topK}`,
+    { signal }
+  );
+}
+
+export function fromSimulationBook(book: SimulationBook): Book {
+  return {
+    id: String(book.book_id),
+    title: book.judul,
+    author: book.author,
+    year: book.tahun || "",
+    score: book.personalized_score ?? book.score,
+    tags: [book.target_competency_name || book.target_competency_id].filter(Boolean),
+    category: book.kategori_buku || book.kategori || "",
+  };
+}
+
+export type UserSession = {
+  id: string;
+  username: string;
+  name: string;
+  current_role: string;
+  target_role: string;
+  scenario_type: "single_gap" | "multi_gap" | "zero_gap";
+  scenario_badge: string;
+  session_token: string;
+};
+
+export function loginApi(username: string, password: string = "password", signal?: AbortSignal) {
+  return post<{ status: string; session_token: string; user: Omit<UserSession, "session_token"> }>(
+    "auth/login",
+    { username, password },
+    signal
+  );
+}

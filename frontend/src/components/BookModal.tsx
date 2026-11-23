@@ -25,6 +25,20 @@ export function BookModal({ book, onClose: close }: { book: Book; onClose: () =>
   const dialog = useRef<HTMLDialogElement>(null);
   const closeButton = useRef<HTMLButtonElement>(null);
   const [expanded, setExpanded] = useState(false);
+  const [showInlineReader, setShowInlineReader] = useState(false);
+
+  const effectiveUrl = access?.source_url || sourceUrl;
+  let googleId: string | null = null;
+  if (effectiveUrl) {
+    try {
+      const u = new URL(effectiveUrl);
+      googleId = u.searchParams.get("id");
+    } catch {
+      const m = effectiveUrl.match(/[?&]id=([^&]+)/);
+      if (m) googleId = m[1];
+    }
+  }
+  const embedUrl = googleId ? `https://books.google.com/books?id=${googleId}&printsec=frontcover&output=embed` : null;
   useEffect(() => {
     const previous = document.activeElement as HTMLElement | null;
     const element = dialog.current;
@@ -102,10 +116,36 @@ export function BookModal({ book, onClose: close }: { book: Book; onClose: () =>
             <h3>Akses buku</h3>
             <p>Akses baca mengikuti ketentuan Google Books. Tidak semua buku menyediakan pratinjau atau bacaan lengkap.</p>
             <div className="access-buttons">
-              {access?.web_reader_url && <a className="btn btn-primary" href={access.web_reader_url} target="_blank" rel="noopener noreferrer"><BookOpenText size={16}/> {access.is_full_readable ? "Baca buku" : "Baca pratinjau"} <ExternalLink size={14}/></a>}
-              {!access?.web_reader_url && access?.preview_url && <a className="btn btn-primary" href={access.preview_url} target="_blank" rel="noopener noreferrer"><BookOpenText size={16}/> Preview buku <ExternalLink size={14}/></a>}
-              {(access?.source_url || sourceUrl) && <a className="btn" href={access?.source_url || sourceUrl || undefined} target="_blank" rel="noopener noreferrer">Lihat di Google Books <ExternalLink size={14}/></a>}
+              {embedUrl && (
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={() => setShowInlineReader(!showInlineReader)}
+                >
+                  <BookOpenText size={16} />
+                  {showInlineReader ? "Tutup Bacaan Langsung" : "Baca Buku Langsung"}
+                </button>
+              )}
+              {access?.web_reader_url && <a className="btn" href={access.web_reader_url} target="_blank" rel="noopener noreferrer"><BookOpenText size={16}/> {access.is_full_readable ? "Buka Tab Bacaan" : "Buka Pratinjau"} <ExternalLink size={14}/></a>}
+              {!access?.web_reader_url && access?.preview_url && <a className="btn" href={access.preview_url} target="_blank" rel="noopener noreferrer"><BookOpenText size={16}/> Preview Tab <ExternalLink size={14}/></a>}
+              {effectiveUrl && <a className="btn" href={effectiveUrl} target="_blank" rel="noopener noreferrer">Google Books <ExternalLink size={14}/></a>}
             </div>
+            {showInlineReader && embedUrl && (
+              <div style={{ marginTop: '16px', borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--line)', background: '#fff' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: '#f0ede4', borderBottom: '1px solid var(--line)', fontSize: '12px' }}>
+                  <span style={{ fontWeight: 600, color: 'var(--ink)' }}>Pratinjau Pembaca Buku Langsung (Google Books)</span>
+                  <button type="button" className="text-link" style={{ fontSize: '12px' }} onClick={() => setShowInlineReader(false)}>Sembunyikan</button>
+                </div>
+                <iframe
+                  src={embedUrl}
+                  title={`Baca ${book.title}`}
+                  width="100%"
+                  height="460px"
+                  style={{ border: 'none', display: 'block' }}
+                  allowFullScreen
+                />
+              </div>
+            )}
             {access?.verification === "google_books_api" && <p className="access-note">Status akses: {access.is_full_readable ? "Bacaan penuh tersedia" : access.viewability === "PARTIAL" ? "Pratinjau terbatas" : "Tidak ada pratinjau yang dikonfirmasi"}.</p>}
             {access?.verification === "metadata_unavailable" && <p className="access-note">Status pratinjau belum bisa dicek. Coba buka halaman Google Books.</p>}
             {!sourceUrl && !access?.source_url && <p className="unavailable">Tautan buku belum tersedia.</p>}

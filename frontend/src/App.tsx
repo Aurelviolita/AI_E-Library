@@ -9,9 +9,18 @@ import { Recommendations } from "./pages/Recommendations";
 import { Mapping } from "./pages/Mapping";
 import { Catalog } from "./pages/Catalog";
 import { SettingsPage } from "./pages/SettingsPage";
-import { findCompetency, getCompetencies, getHealth, type Competency, type Health } from "./api";
+import { LoginPage } from "./pages/LoginPage";
+import { findCompetency, getCompetencies, getHealth, type Competency, type Health, type UserSession } from "./api";
 
 export default function App() {
+  const [session, setSession] = useState<UserSession | null>(() => {
+    try {
+      const raw = localStorage.getItem("bpjs_elibrary_session");
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  });
   const [page, setPage] = useState<Page>("dashboard");
   const [collapsed, setCollapsed] = useState(false);
   const mobileDialog = useRef<HTMLDialogElement>(null);
@@ -99,6 +108,20 @@ export default function App() {
     setHealthRefresh((value) => value + 1);
   }
 
+  function handleLogout() {
+    try {
+      localStorage.removeItem("bpjs_elibrary_session");
+    } catch {
+      // Storage access may be disabled
+    }
+    setSession(null);
+    setPage("dashboard");
+  }
+
+  if (!session) {
+    return <LoginPage onLogin={(newSession) => setSession(newSession)} />;
+  }
+
   return (
     <div className={`app ${collapsed ? "is-collapsed" : ""}`}>
       <aside className="sidebar">
@@ -119,10 +142,24 @@ export default function App() {
         </div>
       </dialog>
       <div className="main-shell">
-        <Topbar page={page} menuButton={menuButton} onMenu={() => mobileDialog.current?.showModal()} onSearch={search} />
+        <Topbar
+          page={page}
+          menuButton={menuButton}
+          onMenu={() => mobileDialog.current?.showModal()}
+          onSearch={search}
+          session={session}
+          onLogout={handleLogout}
+        />
         <main id="main-content">
           <div className="page-content" key={page}>
-            {page === "dashboard" && <Dashboard go={navigate} open={setSelected} health={health} />}
+            {page === "dashboard" && (
+              <Dashboard
+                go={navigate}
+                open={setSelected}
+                health={health}
+                session={session}
+              />
+            )}
             {page === "recommendations" && (
               <Recommendations
                 key={recommendationSearch.version}
