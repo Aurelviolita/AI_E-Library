@@ -62,7 +62,9 @@ export function SimulationSection({
   const activeProfile = result?.profile;
 
   const badgeClass =
-    session.scenario_type === "single_gap"
+    session.id === "user_4"
+      ? "badge-teal"
+      : session.scenario_type === "single_gap"
       ? "badge-amber"
       : session.scenario_type === "multi_gap"
       ? "badge-coral"
@@ -78,6 +80,8 @@ export function SimulationSection({
               <Sparkles size={24} className="icon-emerald" />
             ) : session.scenario_type === "multi_gap" ? (
               <AlertTriangle size={24} className="icon-coral" />
+            ) : session.id === "user_4" ? (
+              <TrendingUp size={24} style={{ color: "#0f766e" }} />
             ) : (
               <TrendingUp size={24} className="icon-amber" />
             )}
@@ -86,13 +90,17 @@ export function SimulationSection({
             <div className="summary-callout-pill">
               {session.scenario_type === "zero_gap"
                 ? "STANDAR KOMPETENSI TERPENUHI (GAP 0)"
+                : session.id === "user_4"
+                ? "GAP UTAMA: DATA MANAGEMENT (GAP 3)"
                 : session.scenario_type === "multi_gap"
                 ? "GAP PRIORITAS TERTINGGI: MACHINE LEARNING (GAP 3)"
                 : "KESENJANGAN UTAMA: DATA ANALYTICS (GAP 1)"}
             </div>
             <h3 className="summary-callout-title">
               {result?.top_gap_summary || activeProfile?.top_gap_summary || session.top_gap_summary || (
-                session.scenario_type === "multi_gap"
+                session.id === "user_4"
+                  ? "Kesenjangan Utama: Data Management (Gap 3) — Membantu mulai mempelajari tata kelola dan manajemen data."
+                  : session.scenario_type === "multi_gap"
                   ? "Gap tertinggi Anda: Machine Learning (3) — Disusul Risk Management (2) dan Data Analytics (1)."
                   : session.scenario_type === "single_gap"
                   ? "Kesenjangan Utama: Data Analytics (1) — Membutuhkan penguatan analitik menuju level Pratama."
@@ -100,7 +108,9 @@ export function SimulationSection({
               )}
             </h3>
             <p className="summary-callout-desc">
-              {session.scenario_type === "multi_gap"
+              {session.id === "user_4"
+                ? "Semua kompetensi lain telah terpenuhi (Gap 0). Rekomendasi di bawah dipilih secara khusus oleh model BGE-M3 untuk membantu Anda mulai belajar Data Management (tata kelola data, arsitektur basis data, dan master data) dari dasar."
+                : session.scenario_type === "multi_gap"
                 ? "Rekomendasi buku di bawah ini diprioritaskan secara proporsional untuk menutup kesenjangan terbesar Anda terlebih dahulu (Gap 3 > Gap 2 > Gap 1)."
                 : session.scenario_type === "single_gap"
                 ? "Rekomendasi buku di bawah ini dikurasi secara khusus untuk menaikkan skor kompetensi dari level 3 menuju target jabatan level 4."
@@ -310,14 +320,16 @@ export function SimulationSection({
                   <TrendingUp size={20} />
                   <div>
                     <strong>
-                      {result.scenario_type === "single_gap"
+                      {session.id === "user_4"
+                        ? "Rekomendasi Mulai Belajar Data Management (Gap 3)"
+                        : result.scenario_type === "single_gap"
                         ? "Rekomendasi Penutup 1 Competency Gap"
                         : `Rekomendasi Terintegrasi Penutup ${result.gap_count} Competency Gaps`}
                     </strong>
                     <p>
-                      Buku di bawah ini dipilih khusus oleh model BGE-M3 untuk menutup kesenjangan kompetensi Anda,
-                      diurutkan berdasarkan bobot prioritas tertinggi (
-                      {result.scenario_type === "multi_gap" ? "Gap 3 > Gap 2 > Gap 1" : "Prioritas Pengembangan"}).
+                      {session.id === "user_4"
+                        ? "Buku di bawah ini dipilih khusus oleh model BGE-M3 untuk membantu Anda mulai mempelajari tata kelola data, arsitektur basis data, dan master data dari dasar (karena seluruh kompetensi lain sudah terpenuhi)."
+                        : "Buku di bawah ini dipilih khusus oleh model BGE-M3 untuk menutup kesenjangan kompetensi Anda, diurutkan berdasarkan bobot prioritas tertinggi (" + (result.scenario_type === "multi_gap" ? "Gap 3 > Gap 2 > Gap 1" : "Prioritas Pengembangan") + ")."}
                     </p>
                   </div>
                 </div>

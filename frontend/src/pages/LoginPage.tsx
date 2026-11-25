@@ -32,6 +32,16 @@ const PRESET_ACCOUNTS = [
     badge: "0 Gap · Upskilling",
     badgeClass: "badge-emerald",
     desc: "Semua standar kompetensi terpenuhi (Gap = 0). Rekomendasi upskilling materi lanjutan."
+  },
+  {
+    username: "user4",
+    id: "user_4",
+    name: "User 4",
+    role: "Junior Data Scientist",
+    target: "Pratama Data Scientist",
+    badge: "1 Gap · Data Management",
+    badgeClass: "badge-teal",
+    desc: "Target: Pratama Data Scientist. Semua kompetensi dikuasai, kecuali Data Management (Gap = 3). Mulai belajar Data Management."
   }
 ];
 
@@ -95,7 +105,7 @@ export function LoginPage({ onLogin }: { onLogin: (session: UserSession) => void
                 required
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                placeholder="user1, user2, atau user3"
+                placeholder="user1, user2, user3, atau user4"
               />
             </div>
 

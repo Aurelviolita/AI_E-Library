@@ -53,6 +53,8 @@ export function Dashboard({
             <Sparkles size={24} className="icon-emerald" />
           ) : session.scenario_type === "multi_gap" ? (
             <AlertTriangle size={24} className="icon-coral" />
+          ) : session.id === "user_4" ? (
+            <TrendingUp size={24} style={{ color: "#0f766e" }} />
           ) : (
             <TrendingUp size={24} className="icon-amber" />
           )}
@@ -61,19 +63,25 @@ export function Dashboard({
           <div className="summary-callout-pill">
             {session.scenario_type === "zero_gap"
               ? "STANDAR KOMPETENSI TERPENUHI (GAP 0)"
+              : session.id === "user_4"
+              ? "GAP UTAMA: DATA MANAGEMENT (GAP 3)"
               : session.scenario_type === "multi_gap"
               ? "GAP PRIORITAS TERTINGGI: MACHINE LEARNING (GAP 3)"
               : "KESENJANGAN UTAMA: DATA ANALYTICS (GAP 1)"}
           </div>
           <h3 className="summary-callout-title">
-            {session.scenario_type === "multi_gap"
+            {session.id === "user_4"
+              ? "Kesenjangan Utama: Data Management (Gap 3) — Membantu mulai mempelajari tata kelola dan manajemen data."
+              : session.scenario_type === "multi_gap"
               ? "Gap tertinggi Anda: Machine Learning (3) — Disusul Risk Management (2) dan Data Analytics (1)."
               : session.scenario_type === "single_gap"
               ? "Kesenjangan Utama: Data Analytics (1) — Membutuhkan penguatan analitik menuju level Pratama."
               : "Seluruh standar kompetensi terpenuhi (Gap 0) — Program Aktif: Upskilling Lanjutan (Evaluasi Model & MLOps)."}
           </h3>
           <p className="summary-callout-desc">
-            {session.scenario_type === "multi_gap"
+            {session.id === "user_4"
+              ? "Semua kompetensi lain telah terpenuhi (Gap 0). Rekomendasi di bawah dipilih secara khusus oleh model BGE-M3 untuk membantu Anda mulai belajar Data Management dari dasar."
+              : session.scenario_type === "multi_gap"
               ? "Rekomendasi di bawah diurutkan secara cerdas untuk memprioritaskan penutupan gap terbesar Anda terlebih dahulu."
               : session.scenario_type === "single_gap"
               ? "Rekomendasi buku di bawah dikurasi khusus untuk menaikkan skor kompetensi dari level 3 menuju target jabatan level 4."

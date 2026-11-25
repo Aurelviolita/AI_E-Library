@@ -578,6 +578,7 @@ def get_simulation_recommendation(
     """Menjalankan rekomendasi berbasis competency gap untuk profil user terpilih (User 1, 2, atau 3)."""
     names = dict(zip(recommender.profiles['competency_id'], recommender.profiles['competency_name']))
     names['C057'] = "Machine Learning (IT Software Dev)"
+    names['C065'] = "Data Management"
     names['ML_EVAL'] = "Evaluasi Model Machine Learning"
     names['MLOPS'] = "MLOps & Arsitektur AI Lanjutan"
 
@@ -709,6 +710,17 @@ AUTH_USERS = {
         "scenario_type": "zero_gap",
         "scenario_badge": "0 Gap · Upskilling & Pengayaan",
         "top_gap_summary": "Seluruh standar kompetensi terpenuhi (Gap 0) — Program Aktif: Upskilling Lanjutan (Evaluasi Model Machine Learning & MLOps)."
+    },
+    "user4": {
+        "id": "user_4",
+        "username": "user4",
+        "password": "password",
+        "name": "User 4",
+        "current_role": "Junior Data Scientist",
+        "target_role": "Pratama Data Scientist",
+        "scenario_type": "single_gap",
+        "scenario_badge": "1 Gap · Fokus Data Management",
+        "top_gap_summary": "Kesenjangan Utama: Data Management (Gap 3) — Seluruh kompetensi lain telah terpenuhi (Gap 0); sistem merekomendasikan bahan bacaan terstruktur untuk mulai mempelajari tata kelola data."
     }
 }
 
@@ -726,7 +738,7 @@ def login(req: LoginRequest):
                 user = cand
                 break
     if not user:
-        raise HTTPException(status_code=401, detail="Akun tidak ditemukan. Gunakan user1, user2, atau user3.")
+        raise HTTPException(status_code=401, detail="Akun tidak ditemukan. Gunakan user1, user2, user3, atau user4.")
     return {
         "status": "success",
         "session_token": f"session-{user['id']}",

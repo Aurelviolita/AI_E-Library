@@ -67,8 +67,8 @@ def merge_learning_recommendations(gaps: list[Gap], fetch_books, *, top_k: int =
                    f"selisih {gap.gap:g}. Kecocokan judul/abstrak perlu ditinjau pengguna.")
             rec = {
                 **book,
-                'raw_score': round(float(book.get('score', 0.0)), 4),
-                'cosine_similarity': round(float(book.get('score', 0.0)), 4),
+                'raw_score': round(float(book.get('raw_score') or book.get('skor_model') or book.get('score', 0.0)), 4),
+                'cosine_similarity': round(float(book.get('raw_score') or book.get('skor_model') or book.get('score', 0.0)), 4),
                 'rrf_score': round(float(book.get('rrf_score', 0.0)), 5) if 'rrf_score' in book else None,
                 'personalized_score': combined,
                 'relevance_weight': round(relevance, 4),

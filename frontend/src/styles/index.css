@@ -3038,6 +3038,12 @@ body:has(.mobile-dialog[open]) { overflow: hidden; }
   border: 1px solid #a7f3d0;
 }
 
+.badge-teal {
+  background: #ccfbf1;
+  color: #115e59;
+  border: 1px solid #99f6e4;
+}
+
 .simulation-pathway-preview {
   display: flex;
   align-items: center;

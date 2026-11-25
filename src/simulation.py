@@ -132,6 +132,49 @@ SIMULATION_PROFILES: list[dict[str, Any]] = [
                 "description": "Deployment model ke produksi, continuous training pipelines, model monitoring, skalabilitas arsitektur sistem AI, dan automated CI/CD for ML."
             }
         ]
+    },
+    {
+        "id": "user_4",
+        "name": "User 4",
+        "current_role": "Junior Data Scientist",
+        "target_role": "Pratama Data Scientist",
+        "scenario_type": "single_gap",
+        "scenario_badge": "1 Gap · Fokus Data Management",
+        "scenario_title": "Satu Competency Gap: Fondasi Data Management",
+        "top_gap_summary": "Kesenjangan Utama: Data Management (Gap 3) — Seluruh kompetensi lain telah terpenuhi (Gap 0); sistem merekomendasikan bahan bacaan terstruktur untuk mulai mempelajari tata kelola data.",
+        "narrative": "Junior Data Scientist ingin naik ke Pratama Data Scientist. Semua standar kompetensi dalam profil jabatannya sudah dikuasai dengan baik (Data Analytics dan Machine Learning bernilai 4 dari target 4, Gap = 0), kecuali Data Management yang bernilai 1 dari target 4 (Gap = 3). Mentor ingin melihat buku apa yang sistem pilih untuk membantu karyawan ini mulai belajar Data Management dari dasar.",
+        "assessments": [
+            {
+                "competency_id": "C065",
+                "competency_name": "Data Management",
+                "current_level": 1.0,
+                "required_level": 4.0,
+                "importance": 5.0,
+                "gap": 3.0,
+                "priority_label": "Prioritas Utama (Mulai Belajar)",
+                "notes": "Memerlukan pemahaman komprehensif mulai dari konsep data governance, master data, hingga manajemen basis data terintegrasi."
+            },
+            {
+                "competency_id": "C066",
+                "competency_name": "Data Analytics",
+                "current_level": 4.0,
+                "required_level": 4.0,
+                "importance": 4.0,
+                "gap": 0.0,
+                "priority_label": "Standar Terpenuhi (Gap 0)",
+                "notes": "Penguasaan teknik analisis data dan pemodelan statistik telah memenuhi standar mandiri."
+            },
+            {
+                "competency_id": "C057",
+                "competency_name": "Machine Learning (IT Software Dev)",
+                "current_level": 4.0,
+                "required_level": 4.0,
+                "importance": 4.0,
+                "gap": 0.0,
+                "priority_label": "Standar Terpenuhi (Gap 0)",
+                "notes": "Kemampuan implementasi model pembelajaran mesin telah memenuhi standar jabatan."
+            }
+        ]
     }
 ]
 
@@ -177,17 +220,27 @@ def run_simulation_recommendation(
             comp_name = names.get(comp_id, comp_id)
             if comp_id == "C057":
                 comp_display = "Machine Learning (IT Software Dev)"
+            elif comp_id == "C065":
+                comp_display = "Data Management"
             else:
                 comp_display = comp_name
 
             # Temukan gap info
             gap_item = next((g for g in gaps if g.competency_id == comp_id), None)
             if gap_item:
-                b["reason"] = (
-                    f"Rekomendasi prioritas untuk menutup gap kompetensi {comp_display}: "
-                    f"nilai aktual {gap_item.current_level:g} menuju target {gap_item.required_level:g} "
-                    f"(selisih gap {gap_item.gap:g}, bobot prioritas {gap_item.priority:.2f})."
-                )
+                if user_id == "user_4" and comp_id == "C065":
+                    b["reason"] = (
+                        f"Rekomendasi prioritas untuk mulai mempelajari Data Management: "
+                        f"nilai aktual {gap_item.current_level:g} menuju target {gap_item.required_level:g} "
+                        f"(selisih gap {gap_item.gap:g}, bobot prioritas {gap_item.priority:.2f}). "
+                        f"Buku ini dipilih untuk membantu membangun pemahaman tata kelola data (data governance), arsitektur data, dan master data management dari dasar."
+                    )
+                else:
+                    b["reason"] = (
+                        f"Rekomendasi prioritas untuk menutup gap kompetensi {comp_display}: "
+                        f"nilai aktual {gap_item.current_level:g} menuju target {gap_item.required_level:g} "
+                        f"(selisih gap {gap_item.gap:g}, bobot prioritas {gap_item.priority:.2f})."
+                    )
             b["target_competency_name"] = comp_display
             b["retrieval_mode"] = retrieval_mode
             if retrieval_mode == "hybrid":
