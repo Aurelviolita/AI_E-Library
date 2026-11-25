@@ -165,9 +165,6 @@ export function SimulationSection({
                 <span className="eyebrow">HASIL ASESMEN STANDAR KOMPETENSI</span>
                 <h3>Tabel Penilaian &amp; Perhitungan Kesenjangan (Gap)</h3>
               </div>
-              <div className="formula-pill">
-                <code>Competency Gap = max(Target − Aktual, 0)</code>
-              </div>
             </div>
 
             <div className="table-responsive">
